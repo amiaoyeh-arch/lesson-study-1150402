@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幾何邏輯與同儕鷹架的共舞 — 課例研究分享簡報（30分鐘）</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-cream: #faf7f2;
+            --bg-card: #ffffff;
+            --primary: #2c3e50;
+            --accent: #e67e22;
+            --accent-soft: #fdf2e9;
+            --secondary: #3498db;
+            --secondary-soft: #ebf5fb;
+            --success: #27ae60;
+            --text-dark: #2c3e50;
+            --text-muted: #7f8c8d;
+            --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.06);
+            --shadow-float: 0 20px 40px rgba(230, 126, 34, 0.12);
+            --radius-lg: 20px;
+            --radius-md: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Zen Maru Gothic', 'Noto Sans TC', sans-serif;
+            background-color: #202428;
+            color: var(--text-dark);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #deck-container {
+            width: 100vw;
+            height: 100vh;
+            max-width: 177.78vh;
+            max-height: 56.25vw;
+            background: var(--bg-cream);
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            height: 54px;
+            padding: 0 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(230, 126, 34, 0.15);
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--primary);
+        }
+
+        .brand-badge {
+            background: var(--accent);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .timer-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid rgba(230, 126, 34, 0.3);
+            transition: all 0.2s;
+        }
+        .timer-box:hover {
+            background: #fae5d3;
+        }
+
+        .btn-ctrl {
+            background: white;
+            border: 1px solid #dcdde1;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-ctrl:hover {
+            background: #f1f2f6;
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .btn-ctrl.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .viewport {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 30px 45px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(30px);
+            transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .slide-header {
+            margin-bottom: 18px;
+        }
+        .slide-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+        .slide-num {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent);
+            background: var(--accent-soft);
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+        .slide-cat {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .slide-title {
+            font-size: 1.85rem;
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1.25;
+            letter-spacing: -0.5px;
+        }
+        .slide-subtitle {
+            font-size: 1.05rem;
+            color: #576574;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .slide-body {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1.15fr 0.95fr;
+            gap: 30px;
+            align-items: stretch;
+            min-height: 0;
+        }
+
+        .slide-content-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 24px 28px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(220, 221, 225, 0.6);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .bullets-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+        }
+        .bullets-list li {
+            position: relative;
+            padding-left: 24px;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: #2f3640;
+        }
+        .bullets-list li::before {
+            content: "✦";
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+
+        .slide-media-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(220, 221, 225, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .slide-media-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background-color: #ffffff;
+            transition: transform 0.3s ease;
+        }
+        .slide-media-card:hover img {
+            transform: scale(1.02);
+        }
+
+        #notes-panel {
+            position: absolute;
+            bottom: 60px;
+            left: 40px;
+            right: 40px;
+            background: rgba(33, 37, 41, 0.95);
+            backdrop-filter: blur(12px);
+            color: #f8f9fa;
+            border-radius: 14px;
+            padding: 18px 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.15);
+            display: none;
+            z-index: 200;
+            max-height: 160px;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        #notes-panel.visible {
+            display: block;
+        }
+        #notes-panel h4 {
+            color: #f39c12;
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #notes-panel p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #ecf0f1;
+        }
+
+        .bottom-bar {
+            height: 54px;
+            padding: 0 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.85);
+            border-top: 1px solid rgba(230, 126, 34, 0.15);
+            z-index: 100;
+        }
+
+        .progress-container {
+            flex: 1;
+            max-width: 450px;
+            height: 8px;
+            background: #e4e7eb;
+            border-radius: 4px;
+            margin: 0 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #e67e22, #f39c12);
+            width: 5.5%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .nav-btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        .nav-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 7px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-btn:hover:not(:disabled) {
+            background: var(--accent);
+            transform: translateY(-1px);
+        }
+        .nav-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="deck-container">
+    <div class="top-bar">
+        <div class="brand">
+            <span>🌸 幾何邏輯與同儕鷹架的共舞</span>
+            <span class="brand-badge">三芝國小・課例研究成果</span>
+        </div>
+        <div class="controls">
+            <div class="timer-box" id="timer-btn" title="點擊切換 計時/暫停/重設">
+                <span>⏱️</span>
+                <span id="timer-display">30:00</span>
+            </div>
+            <button class="btn-ctrl" id="notes-toggle-btn" title="快速鍵: S">
+                <span>📝 講者講稿</span>
+            </button>
+            <button class="btn-ctrl" id="fullscreen-btn" title="快速鍵: F">
+                <span>⛶ 全螢幕</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="viewport" id="viewport"></div>
+
+    <div id="notes-panel">
+        <h4>🎙️ 講者備忘與演講引導</h4>
+        <p id="notes-content"></p>
+    </div>
+
+    <div class="bottom-bar">
+        <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary);" id="slide-indicator">
+            頁次 1 / 18
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="nav-btn-group">
+            <button class="nav-btn" id="prev-btn" onclick="prevSlide()">◀ 上一頁</button>
+            <button class="nav-btn" id="next-btn" onclick="nextSlide()">下一頁 ▶</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const slides = [{"id": 1, "title": "幾何邏輯與同儕鷹架的共舞", "subtitle": "— 從「神祕幾何之花」看國小五年級數學課堂教學實踐與反思", "badge": "課例研究成果報告（30分鐘）", "image": "deck_assets/cover_anime_1789278215810.jpg", "bullets": ["發表人：葉姿妙 老師（新北市三芝國小 / 學習共同體輔導團）", "研究單元：國小五年級數學（扇形單元 S-5-3 / 幾何之花探究）", "課堂演進歷程：1150402（502班 區級公開課）➔ 1150407（504班 滾動修正課）", "核心理念：美感與理性的交織、空間結構閱讀理解、同儕鷹架與流動的善意"], "notes": "【講稿要點（1.5分鐘）】各位長官、校長、輔導團夥伴及老師們好。今天我要分享的課例研究主題是《幾何邏輯與同儕鷹架的共舞》。在三芝國小五年級的數學課堂中，我們將日本傳統七寶紋轉化為「神祕幾何之花」的探究課題。今天這場30分鐘的報告，將帶領大家看見從1150402在502班公開課的挫折與卡點，到1150407在504班的滾動修正，以及孩子們在學習共同體中展現的理性思辯與動人善意。"}, {"id": 2, "title": "課例研究緣起與核心問題", "subtitle": "為什麼選擇五年級「扇形」？從視覺表象到空間幾何邏輯的跨越", "badge": "第一單元：緣起與設計", "image": "deck_assets/geometric_flower_anime_1789278234387.jpg", "bullets": ["五年級學生的認知轉折：從具象圖形走向抽象空間關係與幾何逆推。", "傳統教學的困境：學生常依賴公式死記「圓心角/360」，面對複合圖形時不知從何拆解。", "空間結構的閱讀理解：扇形並非獨立圖塊，而是「圓的動態軌跡（圓心 + 半徑 + 弧）」之組合。", "研究核心問題（Research Questions）：", "  1. 如何設計挑戰性任務（Jumping Task），引發學生自發性的幾何逆推？", "  2. 當學生陷入空間迷思與卡關時，教師與同儕鷹架如何有效介入？"], "notes": "【講稿要點（1.5分鐘）】五年級的幾何學習是孩子空間思維的重要躍升期。以往學生在學扇形時，往往只停留在「像披薩、像扇子」的直дж，或是直接套用公式。但當面對複合圖形時，孩子們往往看不見線條背後的幾何關係。因此，我們設定了核心研究問題：如何透過一個具有挑戰性且充滿美感的幾何課題，讓學生從「盲目操作」跨越到「主動逆推空間結構」？"}, {"id": 3, "title": "核心理念：UbD 與學習共同體的交會", "subtitle": "以理解為先的課程設計（UbD）✕ 聆聽、串聯與伸展跳躍", "badge": "第一單元：理念架構", "image": "deck_assets/cover_anime_1789278215810.jpg", "bullets": ["UbD（重理解的課程設計）：從「終點目標」逆向設計，追求幾何本質的深層理解。", "學習共同體三大支柱：", "  • 聆聽的關係：建立安全的課堂心理環境，珍視每一個真實的錯誤與卡點。", "  • 協同學習：非個人單打獨鬥，透過小組對話激盪多元幾何觀點。", "  • 伸展跳躍（The Leap）：設計高於現有程度的挑戰性任務，促成認知質變。", "教學重心的轉向：從教師的「教」，全面轉向學生的「學習在哪裡發生、在哪裡中斷」。"], "notes": "【講稿要點（1.5分鐘）】本課例緊密結合 UbD 與學習共同體的理念。在學共課堂中，我們最珍貴的不是老師講得多精采，而是把學習主權還給學生。我們不再看老師「教了什麼」，而是專注觀察「學生的學習在哪裡發生？在哪裡中斷？又是如何在同儕的對話與等待中重新接上？」。"}, {"id": 4, "title": "挑戰性任務：神祕的「幾何之花」", "subtitle": "日本傳統「七寶紋」（Shippo Pattern）的數學幾何轉化", "badge": "第一單元：任務設計", "image": "deck_assets/geometric_flower_anime_1789278234387.jpg", "bullets": ["任務情境：在 12 cm × 12 cm 的正方形框架內，給予一張神秘的幾何花紋。", "任務要求：小組合作利用直尺、圓規與量角器，在白紙上精確繪製出這個圖形。", "背後的幾何密碼（Hidden Mathematics）：", "  • 正方形邊長 12 cm ➔ 每個弧的半徑恰好是 6 cm（邊長的一半）。", "  • 四片交疊的葉片，其圓心並不在正方形內部，而是隱藏在正方形的四個「頂點」！", "  • 挑戰點：學生必須從表象的「弧線」，逆向推導回「圓心在哪裡？半徑多長？」。"], "notes": "【講稿要點（2分鐘）】大家請看這張美麗的幾何之花。它的原型是日本傳統的「七寶紋」。在12公分的正方形中，包含了中央的四角星形與四片交疊的葉片。這道題目最巧妙、也最具挑戰性的地方在於：它的圓心是「隱形的」！圓心不在圖形中間，而是隱藏在正方形的四個角落頂點上，半徑是6公分。學生必須具備從視覺弧線「逆推圓心」的能力，這就是引發高度認知衝突的 Jumping Task。"}, {"id": 5, "title": "第一次實踐（1150402 / 502班）：課堂現場與卡點", "subtitle": "空白方格紙上的巨大挫折與盲目試錯", "badge": "第二單元：502班實踐", "image": "deck_assets/struggle_502_anime_1789278262926.jpg", "bullets": ["公開課現場氛圍：任務一下達，502班的孩子們面對空白方格紙陷入沈思與騷動。", "試錯盤旋現象：多數孩子處於「盲目操作」狀態，拿著圓規在紙上反覆亂戳。", "真實課堂觀察：", "  • 孩子們直覺認為「既然花在中間，圓心一定在正方形的正中心」。", "  • 有的孩子拿量角器試圖當成弧線描邊工具；有的拿著圖卡當拼圖比對。", "  • 課堂在前 20 分鐘陷入大量的無效試錯，缺乏幾何邏輯的支點。"], "notes": "【講稿要點（2分鐘）】1150402 是在502班的區級公開課。當任務發下去後，課堂現場出現了意想不到的卡點。孩子們拿著圓規與方格紙，陷入了巨大的挫折。大家看這張動漫插圖，完美重現了當時孩子們抓頭苦思、不知道圓心該戳在哪裡的真實情景。多數學生受限於生活直覺，一直在正方形的肚子中心打轉，無法將「頂點」與「圓心」連結起來。"}, {"id": 6, "title": "臨床診斷：502班三大典型認知迷思", "subtitle": "從學生的「錯誤操作」揭示深層認知結構的斷層", "badge": "第二單元：迷思分析", "image": "deck_assets/hw_502_sample1.png", "bullets": ["1. 誤用量角器畫弧（幾何定義缺失）：", "   • 試圖用量角器旋轉 360 度或直接描邊，將工具視為繪畫模板而非幾何軌跡產生器。", "2. 圓心定在肚子中心（空間慣性受困）：", "   • 堅信圓規針腳必須戳在正方形正中央，受限於封閉式圖形「中心對稱」的思考慣性。", "3. 盲目測距依樣畫葫蘆（閱讀理解缺陷）：", "   • 缺乏將複合圖形拆解為「圓心+半徑」的結構化能力，未能建立「邊長 12cm 與半徑 6cm」的數量連結。"], "notes": "【講稿要點（2分鐘）】課後我們進行了深度的臨床診斷。我們發現孩子們的錯誤並非粗心，而是三大深層認知斷層：第一是工具與定義脫節，把量角器當形狀模板；第二是空間慣性，認為圓心一定在物體正中央；第三是幾何閱讀理解不足，沒有發現邊長12與半徑6的數學因果。這些診斷成為我們下一次教學調整最珍貴的養分。"}, {"id": 7, "title": "502班觀課與議課反思", "subtitle": "輔導團與觀課教師的集體智慧：發現「十字輔助線」的干擾", "badge": "第二單元：議課焦點", "image": "deck_assets/discuss_reflection_anime_1789278608880.jpg", "bullets": ["議課關鍵發現一：圖形輔助線的誤導（十字線的干擾）", "  • 原本教材在正方形中畫了十字架分割線，本意是輔助定位，卻意外強化了學生「中心點是唯一圓心」的先入為主迷思。", "議課關鍵發現二：語言鷹架的斷層", "  • 學生用生活語言說「尖尖的地方」，教師未能在第一時間搭起橋樑轉譯為「頂點」與「圓心」。", "議課關鍵發現三：視覺解構的需求", "  • 整個圖形一次丟出來太複雜，需要動態視覺鷹架引導學生「聚焦於單片葉片」的本質。"], "notes": "【講稿要點（1.5分鐘）】在502班公開課後的議課研討會上，榮校長與輔導團夥伴們給予了非常深刻的洞察。大家發現：原來我們好心畫在學習單上的「十字輔助線」，反而成了誤導學生的元兇！十字線讓孩子們死死盯著交叉中心點。此外，我們也發現需要更有層次的語言引導與動畫解構。"}, {"id": 8, "title": "教學設計的演進與重構（502 ➔ 504）", "subtitle": "兩次教案與學習單設計的實質對比", "badge": "第三單元：兩班滾動修正", "image": "deck_assets/slide8_replace.png", "bullets": ["任務圖形調整：從「含有十字輔助線」改為「全面去除十字線」，還原純粹幾何輪廓。", "視覺鷹架升級：從「靜態全圖挑戰」改為「單片葉片分解動畫」，動態抽離展示。", "教師引導精準化：建構「引導語錦囊（Linking & Returning）」，對焦尖尖角即頂點、手臂為半徑。", "科技即時輔助：導入「平板拍照 + AirDrop 大屏投射」，促進組間多觀點即時激盪。"], "notes": "【講稿要點（2分鐘）】大家請看這張第8頁說明的對比圖卡：在任務推進中，我們拋出核心問題：「小組討論時，有人遇到困難嗎？這張小圖（單片葉片）和大圖的關係是？先跟你的同伴說說看」。透過這樣的問題引導，幫助學生順利從502班的卡點轉化為504班的深刻理解。"}, {"id": 9, "title": "關鍵轉化一：去十字線與單片葉片分解動畫", "subtitle": "去蕪存菁：讓扇形結構（圓心角、半徑、弧）清晰浮現", "badge": "第三單元：關鍵策略一", "image": "deck_assets/slide9_img0800_anime.jpg", "bullets": ["視覺解構的力量：透過簡報動畫將單片「葉片」從複雜花紋中抽離放大。", "核心提問驅動思考：", "  • 「這片葉片是由哪幾個扇形組成的？」", "  • 「它的兩條弧線分別是以哪裡為圓心畫出來的？」", "  • 「圓心角是幾度？半徑是多少公分？」", "空間認知的瞬間清晰：學生立刻看見葉片是「兩個以對角頂點為圓心、半徑 6 cm 的 1/4 圓弧交疊區域」，直擊扇形本質。"], "notes": "【講稿要點（1.5分鐘）】在504班，我們透過簡報動畫把一片「葉片」獨立分離出來。正如這張課堂動漫風實景所示，學生拿著圓規與圖卡，在桌面上專注地探究單片葉片與大圖的關聯，清楚看見兩條弧線分別來自對角頂點的交疊！"}, {"id": 10, "title": "關鍵轉化二：引導語錦囊與概念串聯（Linking）", "subtitle": "教師專業語言轉譯與「手臂轉動」具身體感", "badge": "第三單元：關鍵策略二", "image": "deck_assets/teacher_linking_zh_1789281229614.jpg", "bullets": ["串聯（Linking）的藝術：將學生的生活日常語言，自然轉譯為嚴謹的幾何術語。", "  • 學生指著角說：「老師，就是那個尖尖角！」", "  • 教師溫柔串聯：「在數學上，這個尖尖角就是正方形的頂點，也是圓心喔！」", "回歸（Returning）本質：引導學生思考「扇形一定是圓的一部分」，圓規針腳所在就是圓心。", "身體感知的隱喻：「把肩膀當圓心、手臂當半徑轉一圈」，建立深刻的具身體驗。"], "notes": "【講稿要點（1.5分鐘）】在學共課堂中，老師的話要少，但每一句都要有穿透力。這就是 Linking（串聯）。當孩子說「尖尖角」時，老師不是糾正他，而是溫柔地接住並串聯：「這個尖尖角，在數學上就是正方形的頂點，也是圓心喔！」。這種轉譯讓孩子的直覺與數學理性無縫對接。"}, {"id": 11, "title": "關鍵轉化三：數位科技即時鷹架", "subtitle": "平板拍照、AirDrop 與大屏即時投射促進組間互學", "badge": "第三單元：關鍵策略三", "image": "deck_assets/edtech_airdrop_zh_clean.jpg", "bullets": ["即時形成性評量（Real-time Formative Assessment）：", "  • 教師在巡視時，迅速將不同小組的繪圖歷程、半成品與典型錯誤用平板拍下。", "  • 透過 AirDrop 即時鏡像至教室前方大屏，同步展示多元解法。", "組間觀點激盪與對焦：", "  • 讓各組學生對比：「為什麼第 2 組畫的葉片飽滿，第 4 組畫的偏一邊？」", "  • 引導全班共同檢視「圓心位置」與「半徑開度」對圖形的因果影響。", "  • 科技真正服務於學生「思維可視化」的鷹架。"], "notes": "【講稿要點（1.5分鐘）】在504班，我們善用了生生用平板與大屏技術。老師巡視時將各組的作圖歷程即時拍照投影。當大螢幕同時呈現第2組與第4組的嘗試時，全班孩子一起討論圓心定位的差異，科技讓學生的思考真正被看見。"}, {"id": 12, "title": "微觀風景：學生學習行為矩陣", "subtitle": "多元學習樣態在課堂中的交織與綻放", "badge": "第四單元：微觀風景", "image": "deck_assets/discuss_reflection_anime_1789278608880.jpg", "bullets": ["直覺操作型（小恩）：透過高頻率試錯展現韌性，在同儕耐心引導下逐步走向邏輯定位。", "邏輯推演型（瑄瑄）：堅定捍衛十字輔助線邏輯，在組內辯證中釐清中心點與頂點的幾何功能差異。", "社會學習型（小妍、小珊）：精準聆聽、善於轉述，展現極高同理心，在協助同儕中深化認知。", "內向沉思型（小彥）：整節課安靜無語，但眼神專注，課後作業顯示已精準內化，沈默中學習真實發生。"], "notes": "【講稿要點（2分鐘）】在學習共同體中，我們看見了豐富多元的學生樣態。直覺操作型的小恩、邏輯推演型的瑄瑄、社會學習型的小妍和小珊，以及安靜內向的小彥。每個孩子都有自己的思考節奏。學共課堂的偉大之處，就在於包容並接納這些不同的節奏，讓每個人都能找到屬於自己的學習位置。"}, {"id": 13, "title": "同儕鷹架動人實錄一：小妍對小恩長達20分鐘的等待", "subtitle": "「走得快的人要學會等待」— 學習共同體中最美的風景", "badge": "第四單元：同儕鷹架", "image": "deck_assets/xiaoyan_xiaoen_anime_1789278342431.jpg", "bullets": ["具層次感的陪伴歷程（20 分鐘的溫柔守護）：", "  • 課堂 15 分鐘：小妍迅速完成了自己的幾何圖形，主動轉向一旁卡關的小恩。", "  • 課堂 18 分鐘：輕聲提出提示：「小恩，你看這個角...」，給予小恩自主嘗試的時間。", "  • 課堂 25 分鐘：小恩經歷失敗，小妍依然不直接給答案，耐心地陪他一起檢查半徑。", "  • 課堂 35 分鐘：臨近下課，看到小恩圓規轉軸鬆脫，小妍主動跨組借來好用圓規，陪伴小恩畫下最後一筆。", "這長達 20 分鐘的等待與支持，超越了數學，展現了最純粹的人性之美。"], "notes": "【講稿要點（2分鐘）】這是我在這場課例研究中最感動的一幕。大家看這張插畫，記錄了小妍陪伴小恩的真實歷程。小妍在15分鐘時就已經畫完了，但接下來的20分鐘，她沒有做自己的事，而是一直溫柔地陪伴小恩。她給提示、等待小恩試錯，最後甚至跑去借圓規。佐藤學教授說：「走得快的人要學會等待」，小妍做出了最完美的詮釋。"}, {"id": 14, "title": "同儕鷹架動人實錄二：小珊對小輝的溫柔賦權", "subtitle": "「可以請你拿筆描出你想表達的嗎？」— 不剝奪學習權的高級溝通素養", "badge": "第四單元：同儕鷹架", "image": "deck_assets/xiaoshan_xiaohui_zh.jpg", "bullets": ["面對弱勢學生的溝通智慧：", "  • 小輝在數學學習上較為弱勢，表達也較為退縮害羞。", "  • 一般同儕可能會直接幫他畫完或搶過筆，但小珊展現了極高素養。", "溫柔賦權的對話：", "  • 小珊看著小輝雜亂的草稿，溫柔地問：「我想理解你的想法。可以請你拿筆描出你想表達的嗎？」", "  • 這一句話，把學習與表達的主權牢牢放在小輝手中，讓他感受到被尊重與被聆聽。", "小輝勇敢拿起了筆，指出了他所看到的弧線，跨出了自信的第一步。"], "notes": "【講稿要點（1.5分鐘）】第二個動人實錄是小珊對小輝的對話。小珊面對弱勢的小輝，沒有不耐煩，也沒有直接把答案丟給他，而是說：「我想理解你的想法。可以請你拿筆描出你想表達的嗎？」。這句話賦予了小輝思考與表達的權力。這就是高級的溝通素養，也是學習共同體所培育的核心素養。"}, {"id": 15, "title": "頓悟時刻（The Leap）", "subtitle": "從「尖尖角達到那個角了！」到幾何作圖步驟系統化", "badge": "第四單元：頓悟躍升", "image": "deck_assets/eureka_leap_zh.jpg", "bullets": ["Aha! 領悟的瞬間：", "  • 當學生突然驚呼：「尖尖角達到那個角了！」那一刻，全組發出歡呼。", "  • 幾何邏輯從原先的混沌迷茫，瞬間跨入「圓心即頂點、半徑即邊長一半」的清澈領悟。", "從頓悟到程序性知識的建構：", "  • 教師隨即引導學生將操作步驟文字化與條列化：", "    1. 找出 12 cm 正方形的四個頂點。", "    2. 將圓規開度設定為 6 cm（半徑）。", "    3. 分別以四個頂點為圓心，在正方形內畫出四段 1/4 圓弧。", "瞬時的頓悟成功轉化為牢固的幾何認知架構。"], "notes": "【講稿要點（1.5分鐘）】課堂最震撼的高潮，就是「The Leap（伸展躍升）」的頓悟時刻。當孩子興奮地大喊「啊！我懂了！尖尖角碰到那個角了！」，代表困擾他半節課的幾何迷霧徹底散開。緊接著，老師請孩子們把作圖步驟寫下來，將感性的頓悟轉化為理性的程序知識。"}, {"id": 16, "title": "專業反思：把學習主權還給孩子", "subtitle": "「卡關」是主動建構意義（Sense-making）最珍貴的起點", "badge": "第五單元：專業反思", "image": "deck_assets/IMG_0803.JPG", "bullets": ["教師角色的自我省思：", "  • 少講很多話：學會「忍耐」，克制住直接講授公式的衝動，給予孩子充分試錯的時空。", "  • 創造安全的試錯空間：在課堂中，錯誤不是失敗，而是暴露認知卡點、促進深層討論的契機。", "  • 允許「沈默的學習」發生：像小彥這樣的孩子，安靜並不代表沒有思考，教師應具備看見沈默中深層學習的敏銳度。", "教學伸展設計展望：後續可設計「若圓心移到邊的中點，花紋會如何變化？」進一步拓展空間想像。"], "notes": "【講稿要點（1.5分鐘）】回顧這兩堂課，正如這張動漫插圖所生動呈現的，孩子在大螢幕前自信指認幾何結構：「他會拼成跟中間一樣的扇形」，而老師退居一旁微笑聆聽。我最大的專業收穫是：學會「少講話」，把學習主權還給孩子。在學共課堂中，卡關才是 Sense-making（建構意義）的開始。"}, {"id": 17, "title": "社會情緒學習（SEL）與幾何理性的共舞", "subtitle": "看見三芝國小「流動的善意」— 數學課堂的情感溫度", "badge": "第五單元：核心價值", "image": "deck_assets/closing_flower_anime_1789278587741.jpg", "bullets": ["數學課不僅是邏輯，更是社會情緒學習（SEL）：", "  • 自我覺察與韌性：小恩在無數次畫歪的挫折中，依然一次次拿起圓規嘗試。", "  • 同理心與社會覺察：小妍與小珊展現出對同儕節奏的尊重與無私支援。", "  • 關係建立與協作技能：孩子們在爭辯與合作中，學會了傾聽、等待與賦權。", "流動的善意（Flow of Kindness）：", "在真實的錯誤中，孩子們學會了理性的辯證，更體會了感性的陪伴。這份流動的善意，是學習共同體最堅固的社會資本。"], "notes": "【講稿要點（1.5分鐘）】這堂課最珍貴的，不僅是孩子們學會了畫幾何之花，更是在三芝國小的教室裡看見了「流動的善意」。這是一場數學理性與社會情緒學習（SEL）的完美共舞。在同儕的陪伴下，弱勢的孩子不再害怕數學，優秀的孩子學會了謙遜與等待。"}, {"id": 18, "title": "結語與致謝", "subtitle": "守護學習的溫度，陪伴每個孩子綻放理性與人性之美", "badge": "第五單元：結語致謝", "image": "deck_assets/closing_photo_anime.jpg", "bullets": ["「在幾何的邏輯中，慢慢綻放屬於自己的理性與人性之美。」", "感謝 新北市學習共同體輔導團 的專業引領", "感謝 榮明杰校長 的蒞校指導與深度議課", "感謝 三芝國小 502班、504班 孩子們帶來的課堂感動", "報告完畢・敬請指教與交流"], "notes": "【講稿要點（1分鐘）】最後，我要深深感謝新北市學習共同體輔導團的專家夥伴、榮明杰校長以及三芝國小全體同仁的支持，更要感謝502與504班這群可愛的孩子們。教育就像畫幾何之花，只要給予足夠的耐心、鷹架與等待，每一個孩子都能在數學的理性與同儕的溫暖中，綻放出屬於自己的美麗花朵。謝謝大家！"}];
+    let currentSlide = 0;
+    let timerSeconds = 30 * 60;
+    let timerInterval = null;
+    let timerRunning = false;
+
+    const viewport = document.getElementById('viewport');
+    slides.forEach((s, idx) => {
+        const slideDiv = document.createElement('div');
+        slideDiv.className = `slide ${idx === 0 ? 'active' : ''}`;
+        slideDiv.id = `slide-${idx}`;
+
+        const bulletsHtml = s.bullets.map(b => `<li>${b}</li>`).join('');
+
+        slideDiv.innerHTML = `
+            <div class="slide-header">
+                <div class="slide-meta">
+                    <span class="slide-num">Slide ${s.id}/18</span>
+                    <span class="slide-cat">${s.badge}</span>
+                </div>
+                <h1 class="slide-title">${s.title}</h1>
+                <div class="slide-subtitle">${s.subtitle}</div>
+            </div>
+            <div class="slide-body">
+                <div class="slide-content-card">
+                    <ul class="bullets-list">
+                        ${bulletsHtml}
+                    </ul>
+                </div>
+                <div class="slide-media-card">
+                    <img src="${s.image}" alt="${s.title}" onerror="this.src='deck_assets/cover_anime_1789278215810.jpg'">
+                </div>
+            </div>
+        `;
+        viewport.appendChild(slideDiv);
+    });
+
+    function updateSlide() {
+        document.querySelectorAll('.slide').forEach((el, idx) => {
+            el.classList.toggle('active', idx === currentSlide);
+        });
+        document.getElementById('slide-indicator').innerText = `頁次 ${currentSlide + 1} / ${slides.length}`;
+        document.getElementById('progress-bar').style.width = `${((currentSlide + 1) / slides.length) * 100}%`;
+        document.getElementById('prev-btn').disabled = currentSlide === 0;
+        document.getElementById('next-btn').disabled = currentSlide === slides.length - 1;
+
+        document.getElementById('notes-content').innerText = slides[currentSlide].notes;
+    }
+
+    function nextSlide() {
+        if (currentSlide < slides.length - 1) {
+            currentSlide++;
+            updateSlide();
+        }
+    }
+
+    function prevSlide() {
+        if (currentSlide > 0) {
+            currentSlide--;
+            updateSlide();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+            nextSlide();
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+            prevSlide();
+        } else if (e.key === 's' || e.key === 'S') {
+            toggleNotes();
+        } else if (e.key === 'f' || e.key === 'F') {
+            toggleFullscreen();
+        }
+    });
+
+    const notesPanel = document.getElementById('notes-panel');
+    const notesBtn = document.getElementById('notes-toggle-btn');
+    function toggleNotes() {
+        notesPanel.classList.toggle('visible');
+        notesBtn.classList.toggle('active');
+    }
+    notesBtn.addEventListener('click', toggleNotes);
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+    document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+
+    const timerDisplay = document.getElementById('timer-display');
+    const timerBtn = document.getElementById('timer-btn');
+
+    function formatTime(sec) {
+        const m = Math.floor(sec / 60).toString().padStart(2, '0');
+        const s = (sec % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    }
+
+    function toggleTimer() {
+        if (!timerRunning) {
+            timerRunning = true;
+            timerBtn.style.background = '#d4efdf';
+            timerBtn.style.color = '#27ae60';
+            timerInterval = setInterval(() => {
+                if (timerSeconds > 0) {
+                    timerSeconds--;
+                    timerDisplay.innerText = formatTime(timerSeconds);
+                } else {
+                    clearInterval(timerInterval);
+                    timerRunning = false;
+                    alert('⏰ 30分鐘演講時間結束！');
+                }
+            }, 1000);
+        } else {
+            timerRunning = false;
+            clearInterval(timerInterval);
+            timerBtn.style.background = 'var(--accent-soft)';
+            timerBtn.style.color = 'var(--accent)';
+        }
+    }
+    timerBtn.addEventListener('click', toggleTimer);
+
+    updateSlide();
+</script>
+</body>
+</html>

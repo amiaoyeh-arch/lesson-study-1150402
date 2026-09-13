@@ -1,0 +1,29 @@
+# Ignore raw archive directories
+1150402_說課觀課議課/
+1150623_課堂實踐與反思/
+1150330修訂版/
+榮明杰校長提供/
+淑芳校長提供/
+Gemini整理/
+學生作業/
+extracted_preview/
+.gemini/
+.claude/
+.vscode/
+.system_generated/
+__pycache__/
+
+# Ignore large media & documents
+*.MOV
+*.mov
+*.mp4
+*.MP4
+*.zip
+*.tar.gz
+*.HEIC
+*.pdf
+*.odt
+*.docx
+*.xlsx
+*.csv
+第8頁取代.png
